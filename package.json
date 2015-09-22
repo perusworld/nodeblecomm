@@ -1,14 +1,14 @@
 {
-  "name": "piblecomm",
+  "name": "nodeblecomm",
   "version": "1.0.0",
-  "description": "Raspberry PI BLE Communication Helper Library",
-  "main": "piblecomm.js",
+  "description": "Node.js BLE Communication Helper Library",
+  "main": "nodeblecomm.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/perusworld/piblecomm.git"
+    "url": "git://github.com/perusworld/nodeblecomm.git"
   },
   "keywords": [
     "pi",
@@ -19,7 +19,11 @@
   "author": "Saravana Perumal Shanmugam <saravanaperumal@msn.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/perusworld/piblecomm/issues"
+    "url": "https://github.com/perusworld/nodeblecomm/issues"
   },
-  "homepage": "https://github.com/perusworld/piblecomm"
+  "homepage": "https://github.com/perusworld/nodeblecomm",
+  "dependencies": {
+    "bleno": "^0.2.1",
+    "debug": "^2.2.0"
+  }
 }
