@@ -1,0 +1,25 @@
+{
+  "name": "piblecomm",
+  "version": "1.0.0",
+  "description": "Raspberry PI BLE Communication Helper Library",
+  "main": "piblecomm.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/perusworld/piblecomm.git"
+  },
+  "keywords": [
+    "pi",
+    "raspberry",
+    "ble",
+    "comm"
+  ],
+  "author": "Saravana Perumal Shanmugam <saravanaperumal@msn.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/perusworld/piblecomm/issues"
+  },
+  "homepage": "https://github.com/perusworld/piblecomm"
+}

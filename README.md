@@ -1,2 +1,2 @@
 # piblecomm
-Raspberry PI Serial Communication Helper Library
+Raspberry PI BLE Communication Helper Library
