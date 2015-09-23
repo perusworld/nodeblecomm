@@ -1,2 +1,2 @@
-# piblecomm
-Raspberry PI BLE Communication Helper Library
+# nodeblecomm
+Node.js BLE Communication Helper Library
