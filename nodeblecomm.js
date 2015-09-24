@@ -48,10 +48,13 @@ BLECommLogger.prototype.log = function (msg) {
 	console.log(msg);
 };
 
-function BLEAdapter() {
+function BLEAdapter(sUID, rUID, tUID) {
 	this.conf = {
 		serviceName: "BLEComm",
-		staticData: new Buffer("BLEComm")
+		staticData: new Buffer("BLEComm"),
+		sUID: sUID,
+		rUID: rUID,
+		tUID: tUID
 	};
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
@@ -68,19 +71,19 @@ BLEAdapter.prototype.log = function (msg) {
 BLEAdapter.prototype.init = function () {
 	this.log('in init');
 	this.writeCharacteristic = new Characteristic({
-		uuid: '00000002-0000-1000-8000-00805F9B34FB',
+		uuid: this.conf.tUID,
 		properties: ['notify'],
 		value: this.conf.staticData,
 		onSubscribe: this.onSubscribe.bind(this)
 	});
 	this.readCharacteristic = new Characteristic({
-		uuid: '00000001-0000-1000-8000-00805F9B34FB',
+		uuid: this.conf.rUID,
 		properties: ['writeWithoutResponse'],
 		value: this.conf.staticData,
 		onWriteRequest: this.onDataFromMobile.bind(this)
 	});
 	this.bleCommService = new PrimaryService({
-		uuid: '00000000-0000-1000-8000-00805F9B34FB',
+		uuid: this.conf.sUID,
 		characteristics: [this.readCharacteristic, this.writeCharacteristic]
 	});
 	bleno.on('stateChange', this.onBleStateChange.bind(this));
@@ -165,8 +168,11 @@ BLEAdapter.prototype.sendToMobile = function (buffer) {
 	}
 };
 
-function SimpleBLEAdapter() {
+function SimpleBLEAdapter(sUID, rUID, tUID) {
 	SimpleBLEAdapter.super_.call(this);
+	this.conf.sUID = sUID;
+	this.conf.rUID = rUID;
+	this.conf.tUID = tUID;
 };
 
 util.inherits(SimpleBLEAdapter, BLEAdapter);
