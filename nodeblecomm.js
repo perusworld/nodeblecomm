@@ -56,6 +56,7 @@ function BLEAdapter() {
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
 	this.bleCommService = null;
+	this.onDataCallBack = null;
 };
 
 BLEAdapter.prototype.log = function (msg) {
@@ -67,19 +68,19 @@ BLEAdapter.prototype.log = function (msg) {
 BLEAdapter.prototype.init = function () {
 	this.log('in init');
 	this.writeCharacteristic = new Characteristic({
-		uuid: 'ffe1',
+		uuid: '00000002-0000-1000-8000-00805F9B34FB',
 		properties: ['notify'],
 		value: this.conf.staticData,
 		onSubscribe: this.onSubscribe.bind(this)
 	});
 	this.readCharacteristic = new Characteristic({
-		uuid: 'ffe2',
+		uuid: '00000001-0000-1000-8000-00805F9B34FB',
 		properties: ['writeWithoutResponse'],
 		value: this.conf.staticData,
 		onWriteRequest: this.onDataFromMobile.bind(this)
 	});
 	this.bleCommService = new PrimaryService({
-		uuid: 'ffe0',
+		uuid: '00000000-0000-1000-8000-00805F9B34FB',
 		characteristics: [this.readCharacteristic, this.writeCharacteristic]
 	});
 	bleno.on('stateChange', this.onBleStateChange.bind(this));
@@ -134,7 +135,9 @@ BLEAdapter.prototype.onDataFromMobile = function (data, offset, withoutResponse,
 		callback(this.RESULT_ATTR_NOT_LONG);
 	} else {
 		this.log('Got ' + data.toString());
-		this.sendToMobile('Got ' + data.toString());
+		if (this.onDataCallBack) {
+			this.onDataCallBack(data);
+		}
 		callback(this.RESULT_SUCCESS);
 	}
 };
@@ -157,7 +160,7 @@ BLEAdapter.prototype.onConnected = function () {
 BLEAdapter.prototype.sendToMobile = function (buffer) {
 	this.log('To send ' + buffer.toString());
 	if (this.writeCharacteristic && this.writeCharacteristic.updateValueCallback) {
-	this.log('Sent ' + buffer.toString());
+		this.log('Sent ' + buffer.toString());
 		this.writeCharacteristic.updateValueCallback(buffer);
 	}
 };
@@ -168,17 +171,78 @@ function SimpleBLEAdapter() {
 
 util.inherits(SimpleBLEAdapter, BLEAdapter);
 
-SimpleBLEAdapter.prototype.onDataFromMobile = function (data, offset, withoutResponse, callback) {
+function ProtocolBLEAdapter() {
+	SimpleBLEAdapter.super_.call(this);
+	this.conf.protocol = {
+		inSync: false,
+		COMMAND: {
+			PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
+		}
+	}
+	this.conf.protocol.DATA = new Buffer([this.conf.protocol.COMMAND.DATA]);
+	this.conf.protocol.EOM = new Buffer([this.conf.protocol.COMMAND.EOM_FIRST, this.conf.protocol.COMMAND.EOM_SECOND]);
+	this.conf.protocol.PING_IN = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_IN]), this.conf.protocol.EOM]);
+	this.conf.protocol.PING_OUT = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_OUT]), this.conf.protocol.EOM]);
+};
+
+util.inherits(ProtocolBLEAdapter, BLEAdapter);
+
+ProtocolBLEAdapter.prototype.onConnected = function () {
+	if (!this.conf.protocol.inSync) {
+		this.sendToMobile(this.conf.protocol.PING_IN);
+	}
+};
+
+ProtocolBLEAdapter.prototype.onDataFromMobile = function (data, offset, withoutResponse, callback) {
 	if (offset) {
 		callback(this.RESULT_ATTR_NOT_LONG);
 	} else {
-		this.log('Got ' + data.toString());
-		this.sendToMobile('Got ' + data.toString());
+		this.log('Got ' + data.toString() + " of length " + data.length);
+		if (this.conf.protocol.COMMAND.EOM_FIRST == data[data.length - 2] &&
+			this.conf.protocol.COMMAND.EOM_SECOND == data[data.length - 1]) {
+			switch (data[0]) {
+				case this.conf.protocol.COMMAND.PING_IN:
+					this.pingIn();
+					break;
+				case this.conf.protocol.COMMAND.PING_OUT:
+					this.pingOut();
+					break;
+				case this.conf.protocol.COMMAND.DATA:
+					this.onData(data.slice(1, data.length - 2));
+					break;
+				default:
+					this.log('unknown ' + data[0].toString(16));
+					break;
+			}
+		} else {
+			this.log('invalid protocol markers');
+		}
 		callback(this.RESULT_SUCCESS);
 	}
+};
+
+ProtocolBLEAdapter.prototype.pingIn = function () {
+	this.log('got ping in');
+	this.sendToMobile(this.conf.protocol.PING_OUT);
+	this.sendToMobile(this.conf.protocol.PING_IN);
+};
+
+ProtocolBLEAdapter.prototype.pingOut = function () {
+	this.log('got ping out');
+	this.conf.protocol.inSync = true;
+};
+
+ProtocolBLEAdapter.prototype.onData = function (data) {
+	this.log('got on data ' + data);
+};
+
+ProtocolBLEAdapter.prototype.sendData = function (data) {
+	this.log('to send data ' + data);
+	this.sendToMobile(Buffer.concat([this.conf.DATA, data, this.conf.EOM]));
 };
 
 module.exports.BLECommContext = BLECommContext;
 module.exports.BLECommLogger = BLECommLogger;
 module.exports.BLEAdapter = BLEAdapter;
 module.exports.SimpleBLEAdapter = SimpleBLEAdapter;
+module.exports.ProtocolBLEAdapter = ProtocolBLEAdapter;
