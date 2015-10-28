@@ -9,6 +9,14 @@ var simpleLogger = new logger.SimpleLogger();
 simpleLogger.init(300);
 nodeblecomm.BLEConnContext.init(simpleLogger, bleConnector);
 
+bleConnector.onReady = function () {
+	bleConnector.start();
+};
+bleConnector.onDataCallBack = function (data) {
+};
+bleConnector.onConnected = function (data) {
+	bleConnector.send(new Buffer("Welcome Message"));
+};
 bleConnector.init();
 
 var rl = readline.createInterface(process.stdin, process.stdout);

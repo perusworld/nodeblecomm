@@ -12,18 +12,19 @@ BLEConnContext.init = function (lgr, adptr) {
 	this.adapter = adptr;
 };
 
-function BLEConnector(sUID, rUID, tUID) {
+function BLEConnector(sUID, tUID, rUID) {
 	this.conf = {
-		serviceName: "BLEComm",
-		staticData: new Buffer("BLEComm"),
 		sUID: sUID,
 		rUID: rUID,
 		tUID: tUID
 	};
+	this.pheripheral = null;
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
-	this.bleCommService = null;
+	this.bleConnService = null;
 	this.onDataCallBack = null;
+	this.onConnected = null;
+	this.onReady = null;
 };
 
 BLEConnector.prototype.log = function (msg) {
@@ -41,10 +42,27 @@ BLEConnector.prototype.init = function () {
 BLEConnector.prototype.onBleStateChange = function (state) {
 	this.log('on -> stateChange: ' + state);
 	if (state === 'poweredOn') {
-		noble.startScanning([this.conf.sUID], false, this.onStartScanning.bind(this)); 
+		if (null != this.onReady) {
+			this.onReady();
+		}
 	} else {
 		noble.stopScanning();
 	}
+};
+
+BLEConnector.prototype.start = function () {
+	this.pheripheral = null;
+	this.readCharacteristic = null;
+	this.writeCharacteristic = null;
+	this.bleConnService = null;
+	noble.startScanning([this.conf.sUID], false, this.onStartScanning.bind(this));
+};
+
+BLEConnector.prototype.stop = function (error) {
+	this.pheripheral = null;
+	this.readCharacteristic = null;
+	this.writeCharacteristic = null;
+	this.bleConnService = null;
 };
 
 BLEConnector.prototype.onStartScanning = function (error) {
@@ -57,13 +75,84 @@ BLEConnector.prototype.onStartScanning = function (error) {
 
 BLEConnector.prototype.onDiscovered = function (pheri) {
 	if (pheri) {
+		noble.stopScanning();
+		this.pheripheral = pheri;
 		this.log('found a device ' + pheri);
+		this.pheripheral.connect(this.onPheripheralConnected.bind(this));
 	} else {
 		this.log('error');
 	}
 };
 
-function SimpleBLEConnector(sUID, rUID, tUID) {
+BLEConnector.prototype.onPheripheralConnected = function (error) {
+	if (error) {
+		this.log('error connecting to ' + this.pheripheral + ', ' + error);
+	} else {
+		this.log('connected to ' + this.pheripheral);
+		this.pheripheral.discoverServices([this.conf.sUID], this.onDiscoveredServices.bind(this));
+	}
+};
+
+BLEConnector.prototype.onDiscoveredServices = function (error, services) {
+	if (error) {
+		this.log('error discovering services from ' + this.pheripheral + ', ' + error);
+	} else {
+		this.log('found services from ' + this.pheripheral);
+		for (var index = 0; index < services.length; index++) {
+			if (this.conf.sUID == services[index].uuid) {
+				this.bleConnService = services[index];
+				this.log('found service ' + services[index]);
+				this.bleConnService.discoverCharacteristics([this.conf.rUID, this.conf.tUID], this.onDiscoveredCharacteristics.bind(this));
+			}
+		}
+	}
+};
+
+BLEConnector.prototype.onDiscoveredCharacteristics = function (error, characteristics) {
+	if (error) {
+		this.log('error discovering characteristics from ' + this.bleConnService + ', ' + error);
+	} else {
+		this.log('found services from ' + this.pheripheral);
+		for (var index = 0; index < characteristics.length; index++) {
+			if (this.conf.rUID == characteristics[index].uuid) {
+				this.readCharacteristic = characteristics[index];
+				this.log('found read characteristic ' + characteristics[index]);
+			} else if (this.conf.tUID == characteristics[index].uuid) {
+				this.writeCharacteristic = characteristics[index];
+				this.log('found write characteristic ' + characteristics[index]);
+			}
+		}
+		if (null != this.readCharacteristic && null != this.writeCharacteristic) {
+			this.readCharacteristic.on('data', this.onReadData.bind(this));
+			this.readCharacteristic.notify(true, this.onNotifyStateChange.bind(this));
+		}
+	}
+};
+
+BLEConnector.prototype.onNotifyStateChange = function (error) {
+	if (error) {
+		this.log('error setting notification on ' + this.readCharacteristic + ', ' + error);
+	} else {
+		this.log('notification set for ' + this.readCharacteristic);
+		if (null != this.readCharacteristic && null != this.writeCharacteristic && null != this.onConnected) {
+			this.onConnected();
+		}
+	}
+};
+
+BLEConnector.prototype.onReadData = function (data, isNotification) {
+	this.log('got data ' + data.toString() + ', ' + isNotification);
+};
+
+BLEConnector.prototype.send = function (buffer) {
+	this.log('To send ' + buffer.toString());
+	if (this.writeCharacteristic) {
+		this.writeCharacteristic.write(buffer, true);
+		this.log('Sent ' + buffer.toString());
+	}
+};
+
+function SimpleBLEConnector(sUID, tUID, rUID) {
 	SimpleBLEConnector.super_.call(this);
 	this.conf.sUID = sUID;
 	this.conf.rUID = rUID;
