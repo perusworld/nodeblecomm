@@ -27,6 +27,9 @@ function BLEListner(sUID, rUID, tUID) {
 	this.writeCharacteristic = null;
 	this.bleCommService = null;
 	this.onDataCallBack = null;
+	this.onConnected = null;
+	this.onDisconnected = null;
+	this.onReady = null;
 };
 
 BLEListner.prototype.log = function (msg) {
@@ -62,11 +65,21 @@ BLEListner.prototype.init = function () {
 BLEListner.prototype.onBleStateChange = function (state) {
 	this.log('on -> stateChange: ' + state);
 	if (state === 'poweredOn') {
-		bleno.startAdvertising(this.conf.serviceName, [this.bleCommService.uuid]);
-		this.log('advertising ' + this.conf.serviceName);
+		if (null != this.onReady) {
+			this.onReady();
+		}
 	} else {
 		bleno.stopAdvertising();
 	}
+};
+
+BLEListner.prototype.start = function () {
+	bleno.startAdvertising(this.conf.serviceName, [this.bleCommService.uuid]);
+	this.log('advertising ' + this.conf.serviceName);
+};
+
+BLEListner.prototype.stop = function (error) {
+	bleno.stopAdvertising();
 };
 
 BLEListner.prototype.onBleAdvertisingStart = function (error) {
@@ -98,6 +111,9 @@ BLEListner.prototype.onBleDisconnect = function (clientaddress) {
 	if (clientaddress) {
 		this.log('from clientaddress ' + clientaddress);
 	}
+	if (null != this.onDisconnect) {
+		this.onDisconnect();
+	}
 };
 
 BLEListner.prototype.onDataFromMobile = function (data, offset, withoutResponse, callback) {
@@ -113,10 +129,10 @@ BLEListner.prototype.onDataFromMobile = function (data, offset, withoutResponse,
 };
 
 BLEListner.prototype.onSubscribe = function (maxValueSize, updateValueCallback) {
-	this.log('Got subscribe call');
+	this.log('Got subscribe call with maxValueSize ' + maxValueSize);
 	this.writeCharacteristic.maxValueSize = maxValueSize;
 	this.writeCharacteristic.updateValueCallback = updateValueCallback;
-	this.onConnected();
+	this.onDeviceConnected();
 };
 
 BLEListner.prototype.disconnect = function () {
@@ -124,7 +140,10 @@ BLEListner.prototype.disconnect = function () {
 	bleno.disconnect();
 };
 
-BLEListner.prototype.onConnected = function () {
+BLEListner.prototype.onDeviceConnected = function () {
+	if (null != this.onConnect) {
+		this.onConnect();
+	}
 };
 
 BLEListner.prototype.send = function (buffer) {
@@ -160,7 +179,7 @@ function ProtocolBLEListner() {
 
 util.inherits(ProtocolBLEListner, BLEListner);
 
-ProtocolBLEListner.prototype.onConnected = function () {
+ProtocolBLEListner.prototype.onDeviceConnected = function () {
 	if (!this.conf.protocol.inSync) {
 		this.send(this.conf.protocol.PING_IN);
 	}
