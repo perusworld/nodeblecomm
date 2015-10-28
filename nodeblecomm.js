@@ -1,5 +1,12 @@
 "use strict";
 
-module.exports.server=require('./server')
-module.exports.client=require('./client')
+module.exports= {
+	server : function() {
+		return require('./server');
+	},
+	client : function() {
+		return require('./client');
+	}
+}
+
 

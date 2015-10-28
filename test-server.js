@@ -1,6 +1,6 @@
 var debug = require('debug')('nodeblecomm:test');
 var logger = require("./logger")
-var nodeblecomm = require("./nodeblecomm").server
+var nodeblecomm = require("./nodeblecomm").server()
 var readline = require('readline');
 
 var bleListner = new nodeblecomm.SimpleBLEListner('fff0', 'fff1', 'fff2');
