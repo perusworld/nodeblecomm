@@ -11,6 +11,7 @@ nodeblecomm.BLECommContext.init(bleCommLogger, bleAdapter);
 bleAdapter.init();
 bleAdapter.onDataCallBack = function(data) {
 	bleAdapter.sendToMobile(new Buffer('Got your data ' + data.toString()));
+	bleAdapter.sendToMobile(new Buffer('data length ' + data.length));
 };
 
 var rl = readline.createInterface(process.stdin, process.stdout);
