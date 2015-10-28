@@ -20,5 +20,19 @@ bleConnector.onConnected = function (data) {
 bleConnector.init();
 
 var rl = readline.createInterface(process.stdin, process.stdout);
+rl.on('line', function (input) {
+	if (input == 'start') {
+		bleConnector.start();
+	} else if (input == 'stop') {
+		bleConnector.stop();
+	} else if (input == 'exit') {
+		bleConnector.stop();
+		rl.close();
+		process.exit(0);
+	} else {
+		bleConnector.send(new Buffer(input));
+	}
+});
 rl.setPrompt('>');
 rl.prompt();
+

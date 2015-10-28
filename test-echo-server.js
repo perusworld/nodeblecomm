@@ -10,19 +10,11 @@ simpleLogger.init(300);
 nodeblecomm.BLECommContext.init(simpleLogger, bleListner);
 
 bleListner.onDataCallBack = function (data) {
+	bleListner.sendToMobile(new Buffer('Got your data ' + data.toString()));
+	bleListner.sendToMobile(new Buffer('data length ' + data.length));
 };
 bleListner.init();
 
 var rl = readline.createInterface(process.stdin, process.stdout);
-rl.on('line', function (input) {
-	if (input == 'exit') {
-		bleListner.stop();
-		rl.close();
-		process.exit(0);
-	} else {
-		bleListner.send(new Buffer(input));
-	}
-});
 rl.setPrompt('>');
 rl.prompt();
-

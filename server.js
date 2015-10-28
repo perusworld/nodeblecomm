@@ -127,7 +127,7 @@ BLEListner.prototype.disconnect = function () {
 BLEListner.prototype.onConnected = function () {
 };
 
-BLEListner.prototype.sendToMobile = function (buffer) {
+BLEListner.prototype.send = function (buffer) {
 	this.log('To send ' + buffer.toString());
 	if (this.writeCharacteristic && this.writeCharacteristic.updateValueCallback) {
 		this.log('Sent ' + buffer.toString());
@@ -162,7 +162,7 @@ util.inherits(ProtocolBLEListner, BLEListner);
 
 ProtocolBLEListner.prototype.onConnected = function () {
 	if (!this.conf.protocol.inSync) {
-		this.sendToMobile(this.conf.protocol.PING_IN);
+		this.send(this.conf.protocol.PING_IN);
 	}
 };
 
@@ -196,8 +196,8 @@ ProtocolBLEListner.prototype.onDataFromMobile = function (data, offset, withoutR
 
 ProtocolBLEListner.prototype.pingIn = function () {
 	this.log('got ping in');
-	this.sendToMobile(this.conf.protocol.PING_OUT);
-	this.sendToMobile(this.conf.protocol.PING_IN);
+	this.send(this.conf.protocol.PING_OUT);
+	this.send(this.conf.protocol.PING_IN);
 };
 
 ProtocolBLEListner.prototype.pingOut = function () {
@@ -211,7 +211,7 @@ ProtocolBLEListner.prototype.onData = function (data) {
 
 ProtocolBLEListner.prototype.sendData = function (data) {
 	this.log('to send data ' + data);
-	this.sendToMobile(Buffer.concat([this.conf.DATA, data, this.conf.EOM]));
+	this.send(Buffer.concat([this.conf.DATA, data, this.conf.EOM]));
 };
 
 module.exports.BLECommContext = BLECommContext;
