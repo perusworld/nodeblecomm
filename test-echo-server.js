@@ -10,8 +10,8 @@ simpleLogger.init(300);
 nodeblecomm.BLECommContext.init(simpleLogger, bleListner);
 
 bleListner.onDataCallBack = function (data) {
-	bleListner.sendToMobile(new Buffer('Got your data ' + data.toString()));
-	bleListner.sendToMobile(new Buffer('data length ' + data.length));
+	bleListner.send(new Buffer('Got your data ' + data.toString()));
+	bleListner.send(new Buffer('data length ' + data.length));
 };
 bleListner.init();
 
