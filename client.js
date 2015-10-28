@@ -59,7 +59,11 @@ BLEConnector.prototype.start = function () {
 };
 
 BLEConnector.prototype.stop = function (error) {
-	this.pheripheral.disconnect();
+	try {
+		this.pheripheral.disconnect();
+	} catch (error) {
+		//could be already disconnected
+	}
 	this.pheripheral = null;
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
