@@ -1,6 +1,5 @@
 "use strict";
 
-var client = require('./client');
-
-module.exports=client
+module.exports.server=require('./server')
+module.exports.client=require('./client')
 

@@ -1,18 +1,15 @@
 var debug = require('debug')('nodeblecomm:test');
-var nodeblecomm = require("./nodeblecomm.js")
+var logger = require("./logger")
+var nodeblecomm = require("./nodeblecomm").client
 var readline = require('readline');
 
-var bleAdapter = new nodeblecomm.SimpleBLEAdapter('00000000-0000-1000-8000-00805F9B34FB', '00000001-0000-1000-8000-00805F9B34FB', '00000002-0000-1000-8000-00805F9B34FB');
-var bleCommLogger = new nodeblecomm.BLECommLogger();
+var bleConnector = new nodeblecomm.SimpleBLEConnector('fff0', 'fff1', 'fff2');
+var simpleLogger = new logger.SimpleLogger();
 
-bleCommLogger.init(300);
-nodeblecomm.BLECommContext.init(bleCommLogger, bleAdapter);
+simpleLogger.init(300);
+nodeblecomm.BLEConnContext.init(simpleLogger, bleConnector);
 
-bleAdapter.init();
-bleAdapter.onDataCallBack = function(data) {
-	bleAdapter.sendToMobile(new Buffer('Got your data ' + data.toString()));
-	bleAdapter.sendToMobile(new Buffer('data length ' + data.length));
-};
+bleConnector.init();
 
 var rl = readline.createInterface(process.stdin, process.stdout);
 rl.setPrompt('>');
