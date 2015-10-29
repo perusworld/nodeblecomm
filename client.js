@@ -190,11 +190,15 @@ function ProtocolBLEConnector(sUID, tUID, rUID) {
 	this.conf.protocol = {
 		inSync: false,
 		COMMAND: {
-			PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
+			PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, CHUNKED_DATA_START: 0xEB, CHUNKED_DATA: 0xEC, CHUNKED_DATA_END: 0xED, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
 		},
-		pingTimer: 1000
+		pingTimer: 1000,
+		dataBuffer: null
 	}
 	this.conf.protocol.DATA = new Buffer([this.conf.protocol.COMMAND.DATA]);
+	this.conf.protocol.CHUNKED_START = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA_START]);
+	this.conf.protocol.CHUNKED = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA]);
+	this.conf.protocol.CHUNKED_END = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA_END]);
 	this.conf.protocol.EOM = new Buffer([this.conf.protocol.COMMAND.EOM_FIRST, this.conf.protocol.COMMAND.EOM_SECOND]);
 	this.conf.protocol.PING_IN = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_IN]), this.conf.protocol.EOM]);
 	this.conf.protocol.PING_OUT = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_OUT]), this.conf.protocol.EOM]);
@@ -216,6 +220,17 @@ ProtocolBLEConnector.prototype.onReadData = function (data, isNotification) {
 				break;
 			case this.conf.protocol.COMMAND.DATA:
 				this.onData(data.slice(1, data.length - 2));
+				break;
+			case this.conf.protocol.COMMAND.CHUNKED_DATA_START:
+				this.conf.protocol.dataBuffer = data.slice(1, data.length - 2);
+				break;
+			case this.conf.protocol.COMMAND.CHUNKED_DATA:
+				this.conf.protocol.dataBuffer = Buffer.concat([this.conf.protocol.dataBuffer, data.slice(1, data.length - 2)]);
+				break;
+			case this.conf.protocol.COMMAND.CHUNKED_DATA_END:
+				this.conf.protocol.dataBuffer = Buffer.concat([this.conf.protocol.dataBuffer, data.slice(1, data.length - 2)]);
+				this.onData(this.conf.protocol.dataBuffer);
+				this.conf.protocol.dataBuffer = null;
 				break;
 			default:
 				this.log('unknown ' + data[0].toString(16));
@@ -247,7 +262,18 @@ ProtocolBLEConnector.prototype.onData = function (data) {
 };
 
 ProtocolBLEConnector.prototype.send = function (data) {
-	this.sendRaw(Buffer.concat([this.conf.protocol.DATA, data, this.conf.protocol.EOM]));
+	if (data.length > this.conf.maxLength) {
+		var toIndex = 0;
+		var dataMarker = this.conf.protocol.CHUNKED;
+		for (var index = 0; index < data.length; index = index + this.conf.maxLength) {
+			toIndex = Math.min(index + this.conf.maxLength, data.length);
+			this.log('Going to send part from ' + index + ' to ' + toIndex);
+			dataMarker = (index == 0) ? this.conf.protocol.CHUNKED_START : (toIndex == data.length ? this.conf.protocol.CHUNKED_END : this.conf.protocol.CHUNKED);
+			this.sendRaw(Buffer.concat([dataMarker, data.slice(index, toIndex), this.conf.protocol.EOM]));
+		}
+	} else {
+		this.sendRaw(Buffer.concat([this.conf.protocol.DATA, data, this.conf.protocol.EOM]));
+	}
 };
 
 
