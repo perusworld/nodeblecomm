@@ -146,12 +146,16 @@ BLEListner.prototype.onDeviceConnected = function () {
 	}
 };
 
-BLEListner.prototype.send = function (buffer) {
+BLEListner.prototype.sendRaw = function (buffer) {
 	this.log('To send ' + buffer.toString());
 	if (this.writeCharacteristic && this.writeCharacteristic.updateValueCallback) {
 		this.log('Sent ' + buffer.toString());
 		this.writeCharacteristic.updateValueCallback(buffer);
 	}
+};
+
+BLEListner.prototype.send = function (buffer) {
+	this.sendRaw(buffer);
 };
 
 function SimpleBLEListner(sUID, rUID, tUID) {
@@ -163,25 +167,40 @@ function SimpleBLEListner(sUID, rUID, tUID) {
 
 util.inherits(SimpleBLEListner, BLEListner);
 
-function ProtocolBLEListner() {
-	SimpleBLEListner.super_.call(this);
+function ProtocolBLEListner(sUID, rUID, tUID) {
+	ProtocolBLEListner.super_.call(this);
+	this.conf.sUID = sUID;
+	this.conf.rUID = rUID;
+	this.conf.tUID = tUID;
 	this.conf.protocol = {
 		inSync: false,
 		COMMAND: {
 			PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
-		}
+		},
+		pingTimer: 1000
 	}
 	this.conf.protocol.DATA = new Buffer([this.conf.protocol.COMMAND.DATA]);
 	this.conf.protocol.EOM = new Buffer([this.conf.protocol.COMMAND.EOM_FIRST, this.conf.protocol.COMMAND.EOM_SECOND]);
 	this.conf.protocol.PING_IN = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_IN]), this.conf.protocol.EOM]);
 	this.conf.protocol.PING_OUT = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_OUT]), this.conf.protocol.EOM]);
+	this.onSync = null;
 };
 
 util.inherits(ProtocolBLEListner, BLEListner);
 
 ProtocolBLEListner.prototype.onDeviceConnected = function () {
+	this.conf.protocol.inSync = false;
+	if (null != this.onConnect) {
+		this.onConnect();
+	}
+	setTimeout(this.doPing.bind(this), this.conf.protocol.pingTimer);
+};
+
+ProtocolBLEListner.prototype.doPing = function () {
+	this.log('Is in sync ' + this.conf.protocol.inSync);
 	if (!this.conf.protocol.inSync) {
-		this.send(this.conf.protocol.PING_IN);
+		this.sendRaw(this.conf.protocol.PING_IN);
+		setTimeout(this.doPing.bind(this), this.conf.protocol.pingTimer);
 	}
 };
 
@@ -215,22 +234,27 @@ ProtocolBLEListner.prototype.onDataFromMobile = function (data, offset, withoutR
 
 ProtocolBLEListner.prototype.pingIn = function () {
 	this.log('got ping in');
-	this.send(this.conf.protocol.PING_OUT);
-	this.send(this.conf.protocol.PING_IN);
+	this.sendRaw(this.conf.protocol.PING_OUT);
+	this.sendRaw(this.conf.protocol.PING_IN);
 };
 
 ProtocolBLEListner.prototype.pingOut = function () {
 	this.log('got ping out');
 	this.conf.protocol.inSync = true;
+	if (null != this.onSync) {
+		this.onSync();
+	}
 };
 
 ProtocolBLEListner.prototype.onData = function (data) {
 	this.log('got on data ' + data);
+	if (null != this.onDataCallBack) {
+		this.onDataCallBack(data);
+	}
 };
 
-ProtocolBLEListner.prototype.sendData = function (data) {
-	this.log('to send data ' + data);
-	this.send(Buffer.concat([this.conf.DATA, data, this.conf.EOM]));
+ProtocolBLEListner.prototype.send = function (data) {
+	this.sendRaw(Buffer.concat([this.conf.protocol.DATA, data, this.conf.protocol.EOM]));
 };
 
 module.exports.BLECommContext = BLECommContext;
