@@ -21,7 +21,8 @@ function BLEListner(sUID, rUID, tUID) {
 		staticData: new Buffer("BLEComm"),
 		sUID: sUID,
 		rUID: rUID,
-		tUID: tUID
+		tUID: tUID,
+		maxLength: 100
 	};
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
@@ -155,7 +156,14 @@ BLEListner.prototype.sendRaw = function (buffer) {
 };
 
 BLEListner.prototype.send = function (buffer) {
-	this.sendRaw(buffer);
+	if (buffer.length > this.conf.maxLength) {
+		for (var index = 0; index < buffer.length; index = index + this.conf.maxLength) {
+			this.log('Going to send part from ' + index + ' to ' + Math.min(index + this.conf.maxLength, buffer.length));
+			this.sendRaw(buffer.slice(index, Math.min(index + this.conf.maxLength, buffer.length)));
+		}
+	} else {
+		this.sendRaw(buffer);
+	}
 };
 
 function SimpleBLEListner(sUID, rUID, tUID) {
