@@ -128,6 +128,7 @@ BLEConnector.prototype.onDiscoveredCharacteristics = function (error, characteri
 			}
 		}
 		if (null != this.readCharacteristic && null != this.writeCharacteristic) {
+			this.log('registering for notification');
 			this.readCharacteristic.on('data', this.onReadData.bind(this));
 			this.readCharacteristic.notify(true, this.onNotifyStateChange.bind(this));
 		}
@@ -147,14 +148,21 @@ BLEConnector.prototype.onNotifyStateChange = function (error) {
 
 BLEConnector.prototype.onReadData = function (data, isNotification) {
 	this.log('got data ' + data.toString() + ', ' + isNotification);
+	if (null != this.onDataCallBack) {
+		this.onDataCallBack(data);
+	}
 };
 
-BLEConnector.prototype.send = function (buffer) {
+BLEConnector.prototype.sendRaw = function (buffer) {
 	this.log('To send ' + buffer.toString());
 	if (this.writeCharacteristic) {
 		this.writeCharacteristic.write(buffer, true);
 		this.log('Sent ' + buffer.toString());
 	}
+};
+
+BLEConnector.prototype.send = function (buffer) {
+	this.send(buffer);
 };
 
 function SimpleBLEConnector(sUID, tUID, rUID) {
@@ -166,21 +174,74 @@ function SimpleBLEConnector(sUID, tUID, rUID) {
 
 util.inherits(SimpleBLEConnector, BLEConnector);
 
-function ProtocolBLEConnector() {
-	SimpleBLEConnector.super_.call(this);
+function ProtocolBLEConnector(sUID, tUID, rUID) {
+	ProtocolBLEConnector.super_.call(this);
+	this.conf.sUID = sUID;
+	this.conf.rUID = rUID;
+	this.conf.tUID = tUID;
 	this.conf.protocol = {
 		inSync: false,
 		COMMAND: {
 			PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
-		}
+		},
+		pingTimer: 1000
 	}
 	this.conf.protocol.DATA = new Buffer([this.conf.protocol.COMMAND.DATA]);
 	this.conf.protocol.EOM = new Buffer([this.conf.protocol.COMMAND.EOM_FIRST, this.conf.protocol.COMMAND.EOM_SECOND]);
 	this.conf.protocol.PING_IN = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_IN]), this.conf.protocol.EOM]);
 	this.conf.protocol.PING_OUT = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_OUT]), this.conf.protocol.EOM]);
+	this.onSync = null;
 };
 
 util.inherits(ProtocolBLEConnector, BLEConnector);
+
+ProtocolBLEConnector.prototype.onReadData = function (data, isNotification) {
+	this.log('got data ' + data.toString() + ', ' + isNotification);
+	if (this.conf.protocol.COMMAND.EOM_FIRST == data[data.length - 2] &&
+		this.conf.protocol.COMMAND.EOM_SECOND == data[data.length - 1]) {
+		switch (data[0]) {
+			case this.conf.protocol.COMMAND.PING_IN:
+				this.pingIn();
+				break;
+			case this.conf.protocol.COMMAND.PING_OUT:
+				this.pingOut();
+				break;
+			case this.conf.protocol.COMMAND.DATA:
+				this.onData(data.slice(1, data.length - 2));
+				break;
+			default:
+				this.log('unknown ' + data[0].toString(16));
+				break;
+		}
+	} else {
+		this.log('invalid protocol markers');
+	}
+};
+
+ProtocolBLEConnector.prototype.pingIn = function () {
+	this.log('got ping in');
+	this.sendRaw(this.conf.protocol.PING_OUT);
+	if (null != this.onSync) {
+		this.onSync();
+	}
+};
+
+ProtocolBLEConnector.prototype.pingOut = function () {
+	this.log('got ping out');
+	//noop
+};
+
+ProtocolBLEConnector.prototype.onData = function (data) {
+	this.log('got on data ' + data);
+	if (null != this.onDataCallBack) {
+		this.onDataCallBack(data);
+	}
+};
+
+ProtocolBLEConnector.prototype.send = function (data) {
+	this.sendRaw(Buffer.concat([this.conf.protocol.DATA, data, this.conf.protocol.EOM]));
+};
+
 
 module.exports.BLEConnContext = BLEConnContext;
 module.exports.BLEConnector = BLEConnector;
