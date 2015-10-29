@@ -16,7 +16,8 @@ function BLEConnector(sUID, tUID, rUID) {
 	this.conf = {
 		sUID: sUID,
 		rUID: rUID,
-		tUID: tUID
+		tUID: tUID,
+		maxLength: 100
 	};
 	this.pheripheral = null;
 	this.readCharacteristic = null;
@@ -162,7 +163,14 @@ BLEConnector.prototype.sendRaw = function (buffer) {
 };
 
 BLEConnector.prototype.send = function (buffer) {
-	this.send(buffer);
+	if (buffer.length > this.conf.maxLength) {
+		for (var index = 0; index < buffer.length; index = index + this.conf.maxLength) {
+			this.log('Going to send part from ' + index + ' to ' + Math.min(index + this.conf.maxLength, buffer.length));
+			this.sendRaw(buffer.slice(index, Math.min(index + this.conf.maxLength, buffer.length)));
+		}
+	} else {
+		this.sendRaw(buffer);
+	}
 };
 
 function SimpleBLEConnector(sUID, tUID, rUID) {

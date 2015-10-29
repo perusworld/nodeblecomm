@@ -13,6 +13,10 @@ bleConnector.onReady = function () {
 	bleConnector.start();
 };
 bleConnector.onDataCallBack = function (data) {
+	simpleLogger.log('onDataCallBack');
+};
+bleConnector.onConnected = function (data) {
+	simpleLogger.log('onConnected');
 };
 bleConnector.onConnected = function (data) {
 	bleConnector.send(new Buffer("Welcome Message"));
