@@ -16,10 +16,6 @@ include the following in your package.json
 ## iOS implementation
 Looking to do communications betweeen your iOS app and your Node.js application , use the  [BleComm](https://github.com/perusworld/BleComm) CocoaPod.
 
-## Author
-
-Saravana Perumal Shanmugam, saravanaperumal@msn.com
-
 ## License
 
 nodeblecomm is available under the MIT license. See the LICENSE file for more info.

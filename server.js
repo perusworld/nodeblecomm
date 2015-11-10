@@ -22,7 +22,8 @@ function BLEListner(sUID, rUID, tUID) {
 		sUID: sUID,
 		rUID: rUID,
 		tUID: tUID,
-		maxLength: 100
+		maxLength: 100,
+		connected: false
 	};
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
@@ -101,6 +102,7 @@ BLEListner.prototype.onBleAdvertisingStart = function (error) {
 };
 
 BLEListner.prototype.onBleConnect = function (clientaddress) {
+	this.conf.connected = true;
 	this.log('Got a connection');
 	if (clientaddress) {
 		this.log('from clientaddress ' + clientaddress);
@@ -108,6 +110,7 @@ BLEListner.prototype.onBleConnect = function (clientaddress) {
 };
 
 BLEListner.prototype.onBleDisconnect = function (clientaddress) {
+	this.conf.connected = false;
 	this.log('Disconnected connection');
 	if (clientaddress) {
 		this.log('from clientaddress ' + clientaddress);
@@ -210,9 +213,11 @@ ProtocolBLEListner.prototype.onDeviceConnected = function () {
 
 ProtocolBLEListner.prototype.doPing = function () {
 	this.log('Is in sync ' + this.conf.protocol.inSync);
-	if (!this.conf.protocol.inSync) {
-		this.sendRaw(this.conf.protocol.PING_IN);
-		setTimeout(this.doPing.bind(this), this.conf.protocol.pingTimer);
+	if (this.conf.connected) {
+		if (!this.conf.protocol.inSync) {
+			this.sendRaw(this.conf.protocol.PING_IN);
+			setTimeout(this.doPing.bind(this), this.conf.protocol.pingTimer);
+		}
 	}
 };
 
@@ -234,12 +239,15 @@ ProtocolBLEListner.prototype.onDataFromMobile = function (data, offset, withoutR
 					this.onData(data.slice(1, data.length - 2));
 					break;
 				case this.conf.protocol.COMMAND.CHUNKED_DATA_START:
+					this.log('Got chunk start');
 					this.conf.protocol.dataBuffer = data.slice(1, data.length - 2);
 					break;
 				case this.conf.protocol.COMMAND.CHUNKED_DATA:
+					this.log('Got chunk');
 					this.conf.protocol.dataBuffer = Buffer.concat([this.conf.protocol.dataBuffer, data.slice(1, data.length - 2)]);
 					break;
 				case this.conf.protocol.COMMAND.CHUNKED_DATA_END:
+					this.log('Got chunk end');
 					this.conf.protocol.dataBuffer = Buffer.concat([this.conf.protocol.dataBuffer, data.slice(1, data.length - 2)]);
 					this.onData(this.conf.protocol.dataBuffer);
 					this.conf.protocol.dataBuffer = null;
