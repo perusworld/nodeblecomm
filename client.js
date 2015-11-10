@@ -25,6 +25,7 @@ function BLEConnector(sUID, tUID, rUID) {
 	this.bleConnService = null;
 	this.onDataCallBack = null;
 	this.onConnected = null;
+	this.onDisconnected = null;
 	this.onReady = null;
 };
 
@@ -101,11 +102,17 @@ BLEConnector.prototype.onPheripheralConnected = function (error) {
 };
 
 BLEConnector.prototype.onPheripheralDisconnected = function (error) {
-	//this.pheripheral.removeListener('disconnect', this.onPheripheralDisconnected);
+	this.pheripheral = null;
+	this.readCharacteristic = null;
+	this.writeCharacteristic = null;
+	this.bleConnService = null;
 	if (error) {
-		this.log('error during disconnection ' + this.pheripheral + ', ' + error);
+		this.log('error during disconnection ' + error);
 	} else {
-		this.log('disconnected from ' + this.pheripheral);
+		this.log('disconnected');
+	}
+	if (this.onDisconnected) {
+		this.onDisconnected();
 	}
 };
 

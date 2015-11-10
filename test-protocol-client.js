@@ -13,10 +13,13 @@ bleConnector.onReady = function () {
 	bleConnector.start();
 };
 bleConnector.onDataCallBack = function (data) {
-	simpleLogger.log('onDataCallBack');
+	simpleLogger.log('onDataCallBack' + data);
 };
-bleConnector.onConnected = function (data) {
+bleConnector.onConnected = function () {
 	simpleLogger.log('onConnected');
+};
+bleConnector.onDisconnected = function () {
+	simpleLogger.log('onDisconnected');
 };
 bleConnector.onSync = function (data) {
 	simpleLogger.log('in sync now sending welcome message');
