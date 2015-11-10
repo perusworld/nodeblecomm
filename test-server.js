@@ -14,12 +14,12 @@ bleListner.onReady = function () {
 	bleListner.start();
 };
 bleListner.onDataCallBack = function (data) {
-	simpleLogger.log('onDataCallBack');
+	simpleLogger.log('onDataCallBack' + data);
 };
-bleListner.onConnected = function (data) {
+bleListner.onConnected = function () {
 	simpleLogger.log('onConnected');
 };
-bleListner.onDisconnected = function (data) {
+bleListner.onDisconnected = function () {
 	simpleLogger.log('onDisconnected');
 };
 bleListner.init();

@@ -115,8 +115,8 @@ BLEListner.prototype.onBleDisconnect = function (clientaddress) {
 	if (clientaddress) {
 		this.log('from clientaddress ' + clientaddress);
 	}
-	if (null != this.onDisconnect) {
-		this.onDisconnect();
+	if (null != this.onDisconnected) {
+		this.onDisconnected();
 	}
 };
 
