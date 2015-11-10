@@ -59,7 +59,7 @@ BLEConnector.prototype.start = function () {
 	noble.startScanning([this.conf.sUID], false, this.onStartScanning.bind(this));
 };
 
-BLEConnector.prototype.stop = function (error) {
+BLEConnector.prototype.stop = function () {
 	try {
 		this.pheripheral.disconnect();
 	} catch (error) {
@@ -85,6 +85,7 @@ BLEConnector.prototype.onDiscovered = function (pheri) {
 		this.pheripheral = pheri;
 		this.log('found a device ' + pheri);
 		this.pheripheral.connect(this.onPheripheralConnected.bind(this));
+		this.pheripheral.once('disconnect', this.onPheripheralDisconnected.bind(this));
 	} else {
 		this.log('error');
 	}
@@ -96,6 +97,15 @@ BLEConnector.prototype.onPheripheralConnected = function (error) {
 	} else {
 		this.log('connected to ' + this.pheripheral);
 		this.pheripheral.discoverServices([this.conf.sUID], this.onDiscoveredServices.bind(this));
+	}
+};
+
+BLEConnector.prototype.onPheripheralDisconnected = function (error) {
+	//this.pheripheral.removeListener('disconnect', this.onPheripheralDisconnected);
+	if (error) {
+		this.log('error during disconnection ' + this.pheripheral + ', ' + error);
+	} else {
+		this.log('disconnected from ' + this.pheripheral);
 	}
 };
 
