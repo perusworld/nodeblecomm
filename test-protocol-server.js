@@ -14,15 +14,15 @@ bleListner.onReady = function () {
 	bleListner.start();
 };
 bleListner.onDataCallBack = function (data) {
-	simpleLogger.log('onDataCallBack');
+	simpleLogger.log('onDataCallBack ' + data);
 };
-bleListner.onConnected = function (data) {
+bleListner.onConnected = function () {
 	simpleLogger.log('onConnected');
 };
-bleListner.onDisconnected = function (data) {
+bleListner.onDisconnected = function () {
 	simpleLogger.log('onDisconnected');
 };
-bleListner.onSync = function (data) {
+bleListner.onSync = function () {
 	simpleLogger.log('in sync now');
 };
 bleListner.init();
@@ -30,15 +30,19 @@ bleListner.init();
 var rl = readline.createInterface(process.stdin, process.stdout);
 rl.on('line', function (input) {
 	if (input == 'start') {
+		simpleLogger.log('starting');
 		bleListner.start();
 	} else if (input == 'stop') {
+		simpleLogger.log('stopping');
 		bleListner.disconnect();
 		bleListner.stop();
 	} else if (input == 'exit') {
+		simpleLogger.log('exiting');
 		bleListner.stop();
 		rl.close();
 		process.exit(0);
 	} else {
+		simpleLogger.log('sending');
 		bleListner.send(new Buffer(input));
 	}
 });
