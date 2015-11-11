@@ -263,7 +263,7 @@ ProtocolBLEConnector.prototype.onReadData = function (data, isNotification) {
 	}
 };
 
-BLEConnector.prototype.notificationsSet = function () {
+ProtocolBLEConnector.prototype.notificationsSet = function () {
 };
 
 ProtocolBLEConnector.prototype.pingIn = function () {
