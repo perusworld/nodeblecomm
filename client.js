@@ -158,9 +158,15 @@ BLEConnector.prototype.onNotifyStateChange = function (error) {
 		this.log('error setting notification on ' + this.readCharacteristic + ', ' + error);
 	} else {
 		this.log('notification set for ' + this.readCharacteristic);
-		if (null != this.readCharacteristic && null != this.writeCharacteristic && null != this.onConnected) {
-			this.onConnected();
+		if (null != this.readCharacteristic && null != this.writeCharacteristic) {
+			this.notificationsSet();
 		}
+	}
+};
+
+BLEConnector.prototype.notificationsSet = function () {
+	if (null != this.onConnected) {
+		this.onConnected();
 	}
 };
 
@@ -219,7 +225,6 @@ function ProtocolBLEConnector(sUID, tUID, rUID) {
 	this.conf.protocol.EOM = new Buffer([this.conf.protocol.COMMAND.EOM_FIRST, this.conf.protocol.COMMAND.EOM_SECOND]);
 	this.conf.protocol.PING_IN = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_IN]), this.conf.protocol.EOM]);
 	this.conf.protocol.PING_OUT = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_OUT]), this.conf.protocol.EOM]);
-	this.onSync = null;
 };
 
 util.inherits(ProtocolBLEConnector, BLEConnector);
@@ -258,11 +263,14 @@ ProtocolBLEConnector.prototype.onReadData = function (data, isNotification) {
 	}
 };
 
+BLEConnector.prototype.notificationsSet = function () {
+};
+
 ProtocolBLEConnector.prototype.pingIn = function () {
 	this.log('got ping in');
 	this.sendRaw(this.conf.protocol.PING_OUT);
-	if (null != this.onSync) {
-		this.onSync();
+	if (null != this.onConnected) {
+		this.onConnected();
 	}
 };
 
