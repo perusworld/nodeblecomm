@@ -145,8 +145,8 @@ BLEListner.prototype.disconnect = function () {
 };
 
 BLEListner.prototype.onDeviceConnected = function () {
-	if (null != this.onConnect) {
-		this.onConnect();
+	if (null != this.onConnected) {
+		this.onConnected();
 	}
 };
 
@@ -198,16 +198,12 @@ function ProtocolBLEListner(sUID, rUID, tUID) {
 	this.conf.protocol.EOM = new Buffer([this.conf.protocol.COMMAND.EOM_FIRST, this.conf.protocol.COMMAND.EOM_SECOND]);
 	this.conf.protocol.PING_IN = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_IN]), this.conf.protocol.EOM]);
 	this.conf.protocol.PING_OUT = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_OUT]), this.conf.protocol.EOM]);
-	this.onSync = null;
 };
 
 util.inherits(ProtocolBLEListner, BLEListner);
 
 ProtocolBLEListner.prototype.onDeviceConnected = function () {
 	this.conf.protocol.inSync = false;
-	if (null != this.onConnect) {
-		this.onConnect();
-	}
 	setTimeout(this.doPing.bind(this), this.conf.protocol.pingTimer);
 };
 
@@ -272,8 +268,8 @@ ProtocolBLEListner.prototype.pingIn = function () {
 ProtocolBLEListner.prototype.pingOut = function () {
 	this.log('got ping out');
 	this.conf.protocol.inSync = true;
-	if (null != this.onSync) {
-		this.onSync();
+	if (null != this.onConnected) {
+		this.onConnected();
 	}
 };
 

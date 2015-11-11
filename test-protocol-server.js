@@ -22,9 +22,6 @@ bleListner.onConnected = function () {
 bleListner.onDisconnected = function () {
 	simpleLogger.log('onDisconnected');
 };
-bleListner.onSync = function () {
-	simpleLogger.log('in sync now');
-};
 bleListner.init();
 
 var rl = readline.createInterface(process.stdin, process.stdout);
