@@ -20,6 +20,7 @@ module.exports = {
 			serialNumber: process.env.SERIAL_NUMBER || 's/n',
 			modelNumber: process.env.MODEL_NUMBER || 'm/n',
 			manufacturerName: process.env.MANUFACTURER_NAME || 'manu',
+			features: process.env.FEATURES || '',
 			sUID: process.env.SUID || 'fff0',
 			rUID: process.env.RUID || 'fff1',
 			tUID: process.env.TUID || 'fff2',
@@ -115,6 +116,17 @@ module.exports = {
 						new BlenoDescriptor({
 							uuid: '2901',
 							value: 'manufacturer name'
+						})
+					]
+				}),
+				new Characteristic({
+					uuid: 'fff0',
+					properties: ['read'],
+					value: new Buffer(config.features),
+					descriptors: [
+						new BlenoDescriptor({
+							uuid: '2901',
+							value: 'features'
 						})
 					]
 				}),
