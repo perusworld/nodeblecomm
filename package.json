@@ -1,6 +1,6 @@
 {
   "name": "nodeblecomm",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Node.js BLE Communication Helper Library",
   "main": "nodeblecomm.js",
   "scripts": {
@@ -25,6 +25,7 @@
   "dependencies": {
     "bleno": "^0.2.1",
     "debug": "^2.2.0",
+    "merge": "^1.2.0",
     "noble": "^1.2.0"
   }
 }

@@ -3,7 +3,11 @@ var logger = require("./logger")
 var nodeblecomm = require("./nodeblecomm").server()
 var readline = require('readline');
 
-var bleListner = new nodeblecomm.ProtocolBLEListner('fff0', 'fff1', 'fff2');
+var bleListner = new nodeblecomm.ProtocolBLEListner({
+	sUID: 'fff1',
+	rUID: 'fff1',
+	tUID: 'fff2'
+});
 var simpleLogger = new logger.SimpleLogger();
 
 simpleLogger.init(300);

@@ -2,6 +2,8 @@
 
 var util = require('util');
 var bleno = require('bleno');
+var merge = require("merge");
+
 var logger = require('./logger');
 
 var PrimaryService = bleno.PrimaryService;
@@ -15,16 +17,18 @@ BLECommContext.init = function (lgr, adptr) {
 	this.adapter = adptr;
 };
 
-function BLEListner(sUID, rUID, tUID) {
-	this.conf = {
-		serviceName: "BLEComm",
-		staticData: new Buffer("BLEComm"),
-		sUID: sUID,
-		rUID: rUID,
-		tUID: tUID,
-		maxLength: 100,
-		connected: false
-	};
+function BLEListner(config) {
+	this.conf = merge(
+		{
+			serviceName: "BLEComm",
+			staticData: new Buffer("BLEComm"),
+			sUID: 'fff0',
+			rUID: 'fff1',
+			tUID: 'fff2',
+			maxLength: 100,
+			connected: false
+		}, config);
+
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
 	this.bleCommService = null;
@@ -169,28 +173,25 @@ BLEListner.prototype.send = function (buffer) {
 	}
 };
 
-function SimpleBLEListner(sUID, rUID, tUID) {
+function SimpleBLEListner(config) {
 	SimpleBLEListner.super_.call(this);
-	this.conf.sUID = sUID;
-	this.conf.rUID = rUID;
-	this.conf.tUID = tUID;
+	this.conf = merge(this.conf, config);
 };
 
 util.inherits(SimpleBLEListner, BLEListner);
 
-function ProtocolBLEListner(sUID, rUID, tUID) {
+function ProtocolBLEListner(config) {
 	ProtocolBLEListner.super_.call(this);
-	this.conf.sUID = sUID;
-	this.conf.rUID = rUID;
-	this.conf.tUID = tUID;
-	this.conf.protocol = {
-		inSync: false,
-		COMMAND: {
-			PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, CHUNKED_DATA_START: 0xEB, CHUNKED_DATA: 0xEC, CHUNKED_DATA_END: 0xED, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
-		},
-		pingTimer: 1000,
-		dataBuffer: null
-	}
+	this.conf = merge(this.conf, config, {
+		protocol: {
+			inSync: false,
+			COMMAND: {
+				PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, CHUNKED_DATA_START: 0xEB, CHUNKED_DATA: 0xEC, CHUNKED_DATA_END: 0xED, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
+			},
+			pingTimer: 1000,
+			dataBuffer: null
+		}
+	});
 	this.conf.protocol.DATA = new Buffer([this.conf.protocol.COMMAND.DATA]);
 	this.conf.protocol.CHUNKED_START = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA_START]);
 	this.conf.protocol.CHUNKED = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA]);
