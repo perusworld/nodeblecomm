@@ -6,6 +6,7 @@ var merge = require("merge");
 
 var logger = require('./logger');
 var protocol = require('./protocol');
+var appConfig = require('./config');
 
 function BLEConnContext() {
 };
@@ -16,13 +17,7 @@ BLEConnContext.init = function (lgr, adptr) {
 };
 
 function BLEConnector(config) {
-	this.conf = merge(
-		{
-			sUID: 'fff0',
-			rUID: 'fff2',
-			tUID: 'fff1',
-			maxLength: 100
-		}, config);
+	this.conf = merge({}, appConfig.client, config);
 
 	this.pheripheral = null;
 	this.readCharacteristic = null;
@@ -202,21 +197,16 @@ BLEConnector.prototype.send = function (buffer) {
 };
 
 function SimpleBLEConnector(config) {
-	SimpleBLEConnector.super_.call(this);
-	this.conf = merge(this.conf, config);
+	SimpleBLEConnector.super_.call(this, config);
 };
 
 util.inherits(SimpleBLEConnector, BLEConnector);
 
 function ProtocolBLEConnector(config) {
-	ProtocolBLEConnector.super_.call(this);
-	this.conf = merge(this.conf, config, {
-		protocol: {
-			inSync: false,
-			COMMAND: protocol.command,
-			pingTimer: 1000,
-			dataBuffer: null
-		}
+	ProtocolBLEConnector.super_.call(this, merge({}, appConfig.server.protocol, config));
+	merge(this.conf.protocol, {
+		inSync: false,
+		dataBuffer: null
 	});
 	protocol.mergeCommands(this.conf.protocol);
 };
