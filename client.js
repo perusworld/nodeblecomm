@@ -2,7 +2,10 @@
 
 var util = require('util');
 var noble = require('noble');
+var merge = require("merge");
+
 var logger = require('./logger');
+var protocol = require('./protocol');
 
 function BLEConnContext() {
 };
@@ -12,13 +15,15 @@ BLEConnContext.init = function (lgr, adptr) {
 	this.adapter = adptr;
 };
 
-function BLEConnector(sUID, tUID, rUID) {
-	this.conf = {
-		sUID: sUID,
-		rUID: rUID,
-		tUID: tUID,
-		maxLength: 100
-	};
+function BLEConnector(config) {
+	this.conf = merge(
+		{
+			sUID: 'fff0',
+			rUID: 'fff2',
+			tUID: 'fff1',
+			maxLength: 100
+		}, config);
+
 	this.pheripheral = null;
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
@@ -196,35 +201,26 @@ BLEConnector.prototype.send = function (buffer) {
 	}
 };
 
-function SimpleBLEConnector(sUID, tUID, rUID) {
+function SimpleBLEConnector(config) {
 	SimpleBLEConnector.super_.call(this);
-	this.conf.sUID = sUID;
-	this.conf.rUID = rUID;
-	this.conf.tUID = tUID;
+	this.conf = merge(this.conf, config);
 };
 
 util.inherits(SimpleBLEConnector, BLEConnector);
 
-function ProtocolBLEConnector(sUID, tUID, rUID) {
+function ProtocolBLEConnector(config) {
 	ProtocolBLEConnector.super_.call(this);
-	this.conf.sUID = sUID;
-	this.conf.rUID = rUID;
-	this.conf.tUID = tUID;
-	this.conf.protocol = {
-		inSync: false,
-		COMMAND: {
-			PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, CHUNKED_DATA_START: 0xEB, CHUNKED_DATA: 0xEC, CHUNKED_DATA_END: 0xED, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
-		},
-		pingTimer: 1000,
-		dataBuffer: null
-	}
-	this.conf.protocol.DATA = new Buffer([this.conf.protocol.COMMAND.DATA]);
-	this.conf.protocol.CHUNKED_START = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA_START]);
-	this.conf.protocol.CHUNKED = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA]);
-	this.conf.protocol.CHUNKED_END = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA_END]);
-	this.conf.protocol.EOM = new Buffer([this.conf.protocol.COMMAND.EOM_FIRST, this.conf.protocol.COMMAND.EOM_SECOND]);
-	this.conf.protocol.PING_IN = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_IN]), this.conf.protocol.EOM]);
-	this.conf.protocol.PING_OUT = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_OUT]), this.conf.protocol.EOM]);
+	this.conf = merge(this.conf, config);
+	this.conf = merge(this.conf, {
+		protocol: {
+			inSync: false,
+			COMMAND: protocol.command,
+			pingTimer: 1000,
+			dataBuffer: null
+		}
+	});
+	protocol.mergeCommands(this.conf.protocol);
+	console.log(JSON.stringify(this.conf));
 };
 
 util.inherits(ProtocolBLEConnector, BLEConnector);
