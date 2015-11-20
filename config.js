@@ -24,6 +24,8 @@ module.exports = {
 			sUID: process.env.SUID || 'fff0',
 			rUID: process.env.RUID || 'fff1',
 			tUID: process.env.TUID || 'fff2',
+			iUID: process.env.IUID || '180a',
+			fUID: process.env.fUID || 'fff3',
 			maxLength: process.env.MAX_LENGTH || 100,
 			desc: process.env.DESC || 'BLEComm'
 		},
@@ -44,7 +46,7 @@ module.exports = {
 
 	infoService: function (config) {
 		return new PrimaryService({
-			uuid: '180a',
+			uuid: config.iUID,
 			characteristics: [
 				new Characteristic({
 					uuid: '2a00',
@@ -124,7 +126,7 @@ module.exports = {
 					]
 				}),
 				new Characteristic({
-					uuid: 'fff0',
+					uuid: config.fUID,
 					properties: ['read'],
 					value: new Buffer(config.features),
 					descriptors: [
