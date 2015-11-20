@@ -6,9 +6,11 @@ var merge = require("merge");
 
 var logger = require('./logger');
 var protocol = require('./protocol');
+var appConfig = require('./config');
 
 var PrimaryService = bleno.PrimaryService;
 var Characteristic = bleno.Characteristic;
+var BlenoDescriptor = bleno.Descriptor;
 
 function BLECommContext() {
 };
@@ -21,18 +23,14 @@ BLECommContext.init = function (lgr, adptr) {
 function BLEListner(config) {
 	this.conf = merge(
 		{
-			serviceName: "BLEComm",
-			staticData: new Buffer("BLEComm"),
-			sUID: 'fff0',
-			rUID: 'fff1',
-			tUID: 'fff2',
-			maxLength: 100,
 			connected: false
-		}, config);
+		}, appConfig.server.default, config);
+	this.conf.staticData = new Buffer(this.conf.desc)
 
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
 	this.bleCommService = null;
+	this.infoService = null;
 	this.onDataCallBack = null;
 	this.onConnected = null;
 	this.onDisconnected = null;
@@ -47,6 +45,7 @@ BLEListner.prototype.log = function (msg) {
 
 BLEListner.prototype.init = function () {
 	this.log('in init');
+	this.infoService = appConfig.infoService(this.conf);
 	this.writeCharacteristic = new Characteristic({
 		uuid: this.conf.tUID,
 		properties: ['notify'],
@@ -81,7 +80,7 @@ BLEListner.prototype.onBleStateChange = function (state) {
 };
 
 BLEListner.prototype.start = function () {
-	bleno.startAdvertising(this.conf.serviceName, [this.bleCommService.uuid]);
+	bleno.startAdvertising(this.conf.serviceName, [this.bleCommService.uuid, this.infoService.uuid]);
 	this.log('advertising ' + this.conf.serviceName);
 };
 
@@ -95,7 +94,7 @@ BLEListner.prototype.onBleAdvertisingStart = function (error) {
 		this.log('error ' + error);
 	} else {
 		this.log('success');
-		bleno.setServices([this.bleCommService], function (serviceError) {
+		bleno.setServices([this.bleCommService, this.infoService], function (serviceError) {
 			this.log('Starting services: ')
 			if (serviceError) {
 				this.log('error ' + serviceError);
@@ -175,21 +174,16 @@ BLEListner.prototype.send = function (buffer) {
 };
 
 function SimpleBLEListner(config) {
-	SimpleBLEListner.super_.call(this);
-	this.conf = merge(this.conf, config);
+	SimpleBLEListner.super_.call(this, config);
 };
 
 util.inherits(SimpleBLEListner, BLEListner);
 
 function ProtocolBLEListner(config) {
-	ProtocolBLEListner.super_.call(this);
-	this.conf = merge(this.conf, config, {
-		protocol: {
-			inSync: false,
-			COMMAND: protocol.command,
-			pingTimer: 1000,
-			dataBuffer: null
-		}
+	ProtocolBLEListner.super_.call(this, merge({}, appConfig.server.protocol, config));
+	merge(this.conf.protocol, {
+		inSync: false,
+		dataBuffer: null
 	});
 	protocol.mergeCommands(this.conf.protocol);
 };
