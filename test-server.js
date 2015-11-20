@@ -14,7 +14,7 @@ bleListner.onReady = function () {
 	bleListner.start();
 };
 bleListner.onDataCallBack = function (data) {
-	simpleLogger.log('onDataCallBack' + data);
+	simpleLogger.log('onDataCallBack ' + data);
 };
 bleListner.onConnected = function () {
 	simpleLogger.log('onConnected');

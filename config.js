@@ -35,6 +35,10 @@ module.exports = {
 	},
 
 	client: {
+		sUID: process.env.SUID || 'fff0',
+		rUID: process.env.RUID || 'fff2',
+		tUID: process.env.TUID || 'fff1',
+		maxLength: process.env.MAX_LENGTH || 100
 	},
 
 	infoService: function (config) {
