@@ -210,8 +210,7 @@ util.inherits(SimpleBLEConnector, BLEConnector);
 
 function ProtocolBLEConnector(config) {
 	ProtocolBLEConnector.super_.call(this);
-	this.conf = merge(this.conf, config);
-	this.conf = merge(this.conf, {
+	this.conf = merge(this.conf, config, {
 		protocol: {
 			inSync: false,
 			COMMAND: protocol.command,
@@ -220,7 +219,6 @@ function ProtocolBLEConnector(config) {
 		}
 	});
 	protocol.mergeCommands(this.conf.protocol);
-	console.log(JSON.stringify(this.conf));
 };
 
 util.inherits(ProtocolBLEConnector, BLEConnector);

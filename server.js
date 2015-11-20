@@ -5,6 +5,7 @@ var bleno = require('bleno');
 var merge = require("merge");
 
 var logger = require('./logger');
+var protocol = require('./protocol');
 
 var PrimaryService = bleno.PrimaryService;
 var Characteristic = bleno.Characteristic;
@@ -185,20 +186,12 @@ function ProtocolBLEListner(config) {
 	this.conf = merge(this.conf, config, {
 		protocol: {
 			inSync: false,
-			COMMAND: {
-				PING_IN: 0xCC, PING_OUT: 0xDD, DATA: 0xEE, CHUNKED_DATA_START: 0xEB, CHUNKED_DATA: 0xEC, CHUNKED_DATA_END: 0xED, EOM_FIRST: 0xFE, EOM_SECOND: 0xFF
-			},
+			COMMAND: protocol.command,
 			pingTimer: 1000,
 			dataBuffer: null
 		}
 	});
-	this.conf.protocol.DATA = new Buffer([this.conf.protocol.COMMAND.DATA]);
-	this.conf.protocol.CHUNKED_START = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA_START]);
-	this.conf.protocol.CHUNKED = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA]);
-	this.conf.protocol.CHUNKED_END = new Buffer([this.conf.protocol.COMMAND.CHUNKED_DATA_END]);
-	this.conf.protocol.EOM = new Buffer([this.conf.protocol.COMMAND.EOM_FIRST, this.conf.protocol.COMMAND.EOM_SECOND]);
-	this.conf.protocol.PING_IN = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_IN]), this.conf.protocol.EOM]);
-	this.conf.protocol.PING_OUT = Buffer.concat([new Buffer([this.conf.protocol.COMMAND.PING_OUT]), this.conf.protocol.EOM]);
+	protocol.mergeCommands(this.conf.protocol);
 };
 
 util.inherits(ProtocolBLEListner, BLEListner);
