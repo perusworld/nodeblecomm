@@ -41,6 +41,7 @@ module.exports = {
 		sUID: process.env.SUID || 'fff0',
 		rUID: process.env.RUID || 'fff2',
 		tUID: process.env.TUID || 'fff1',
+		fUID: process.env.fUID || 'fff3',
 		maxLength: process.env.MAX_LENGTH || 100
 	},
 

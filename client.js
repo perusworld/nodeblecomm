@@ -27,6 +27,7 @@ function BLEConnector(config) {
 	this.onConnected = null;
 	this.onDisconnected = null;
 	this.onReady = null;
+	this.features = [];
 };
 
 BLEConnector.prototype.log = function (msg) {
@@ -120,7 +121,7 @@ BLEConnector.prototype.onDiscoveredServices = function (error, services) {
 	if (error) {
 		this.log('error discovering services from ' + this.pheripheral + ', ' + error);
 	} else {
-		this.log('found services from ' + this.pheripheral);
+		this.log('found ' + services.length + ' services from ' + this.pheripheral);
 		for (var index = 0; index < services.length; index++) {
 			if (this.conf.sUID == services[index].uuid) {
 				this.bleConnService = services[index];
@@ -135,21 +136,54 @@ BLEConnector.prototype.onDiscoveredCharacteristics = function (error, characteri
 	if (error) {
 		this.log('error discovering characteristics from ' + this.bleConnService + ', ' + error);
 	} else {
-		this.log('found services from ' + this.pheripheral);
+		this.log('found characteristics from ' + this.pheripheral);
 		for (var index = 0; index < characteristics.length; index++) {
 			if (this.conf.rUID == characteristics[index].uuid) {
 				this.readCharacteristic = characteristics[index];
 				this.log('found read characteristic ' + characteristics[index]);
+				this.readCharacteristic.discoverDescriptors(this.onDiscoverDescriptors.bind(this));
 			} else if (this.conf.tUID == characteristics[index].uuid) {
 				this.writeCharacteristic = characteristics[index];
 				this.log('found write characteristic ' + characteristics[index]);
 			}
 		}
-		if (null != this.readCharacteristic && null != this.writeCharacteristic) {
-			this.log('registering for notification');
-			this.readCharacteristic.on('data', this.onReadData.bind(this));
-			this.readCharacteristic.notify(true, this.onNotifyStateChange.bind(this));
+	}
+};
+
+BLEConnector.prototype.registerNotifications = function () {
+	if (null != this.readCharacteristic && null != this.writeCharacteristic) {
+		this.log('registering for notification, with features ' + this.features);
+		this.readCharacteristic.on('data', this.onReadData.bind(this));
+		this.readCharacteristic.notify(true, this.onNotifyStateChange.bind(this));
+	}
+};
+
+BLEConnector.prototype.onDiscoverDescriptors = function (error, descriptors) {
+	if (error) {
+		this.log('error discovering descriptors' + error);
+	} else {
+		this.log('found ' + descriptors.length + ' descriptors');
+		var found = false;
+		for (var index = 0; index < descriptors.length; index++) {
+			if (this.conf.fUID == descriptors[index].uuid) {
+				found = true;
+				this.log('found features descriptor ' + descriptors[index]);
+				descriptors[index].readValue(this.onFeatureReadValue.bind(this));
+			}
 		}
+		if (!found) {
+			this.features = [];
+			this.registerNotifications();
+		}
+	}
+};
+
+BLEConnector.prototype.onFeatureReadValue = function (error, data) {
+	if (error) {
+		this.log('error reading feature value');
+	} else {
+		this.features = data.toString().split(',');
+		this.registerNotifications();
 	}
 };
 
