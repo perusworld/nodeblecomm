@@ -3,7 +3,7 @@ var logger = require("./logger")
 var nodeblecomm = require("./nodeblecomm").client()
 var readline = require('readline');
 
-var bleConnector = new nodeblecomm.ProtocolBLEConnector({
+var bleConnector = new nodeblecomm.SimpleBLEConnector({
 	sUID: 'fff1',
 	rUID: 'fff2',
 	tUID: 'fff1'

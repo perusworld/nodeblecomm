@@ -42,7 +42,8 @@ module.exports = {
 		rUID: process.env.RUID || 'fff2',
 		tUID: process.env.TUID || 'fff1',
 		fUID: process.env.fUID || 'fff3',
-		maxLength: process.env.MAX_LENGTH || 100
+		maxLength: process.env.MAX_LENGTH || 100,
+		dataHandler: null
 	},
 
 	infoService: function (config) {
