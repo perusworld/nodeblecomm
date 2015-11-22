@@ -125,18 +125,7 @@ module.exports = {
 							value: 'manufacturer name'
 						})
 					]
-				}),
-				new Characteristic({
-					uuid: config.fUID,
-					properties: ['read'],
-					value: new Buffer(config.features),
-					descriptors: [
-						new BlenoDescriptor({
-							uuid: '2901',
-							value: 'features'
-						})
-					]
-				}),
+				})
 			]
 		});
 	}

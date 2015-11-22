@@ -50,7 +50,13 @@ BLEListner.prototype.init = function () {
 		uuid: this.conf.tUID,
 		properties: ['notify'],
 		value: this.conf.staticData,
-		onSubscribe: this.onSubscribe.bind(this)
+		onSubscribe: this.onSubscribe.bind(this),
+		descriptors: [
+			new BlenoDescriptor({
+				uuid: this.conf.fUID,
+				value: this.conf.features
+			})
+		]
 	});
 	this.readCharacteristic = new Characteristic({
 		uuid: this.conf.rUID,
@@ -80,7 +86,7 @@ BLEListner.prototype.onBleStateChange = function (state) {
 };
 
 BLEListner.prototype.start = function () {
-	bleno.startAdvertising(this.conf.serviceName, [this.bleCommService.uuid, this.infoService.uuid]);
+	bleno.startAdvertising(this.conf.serviceName, [this.bleCommService.uuid]);
 	this.log('advertising ' + this.conf.serviceName);
 };
 
