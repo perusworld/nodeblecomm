@@ -16,6 +16,7 @@ bleConnector.onDataCallBack = function (data) {
 	simpleLogger.log('onDataCallBack ' + data);
 };
 bleConnector.onConnected = function () {
+	simpleLogger.log('onConnected');
 	bleConnector.send(new Buffer("Welcome Message"));
 };
 bleConnector.onDisconnected = function () {

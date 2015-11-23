@@ -4,9 +4,6 @@ var nodeblecomm = require("./nodeblecomm").server()
 var readline = require('readline');
 
 var bleListner = new nodeblecomm.ProtocolBLEListner({
-	sUID: 'fff1',
-	rUID: 'fff1',
-	tUID: 'fff2',
 	features: 'protocol'
 });
 var simpleLogger = new logger.SimpleLogger();
