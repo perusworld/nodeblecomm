@@ -293,3 +293,9 @@ module.exports.BLECommContext = BLECommContext;
 module.exports.BLEListner = BLEListner;
 module.exports.SimpleBLEListner = SimpleBLEListner;
 module.exports.ProtocolBLEListner = ProtocolBLEListner;
+module.exports.getBLENO = function() {
+	return bleno;
+};
+module.exports.getLogger = function() {
+	return logger;
+};

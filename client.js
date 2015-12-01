@@ -236,3 +236,9 @@ util.inherits(SimpleBLEConnector, BLEConnector);
 module.exports.BLEConnContext = BLEConnContext;
 module.exports.BLEConnector = BLEConnector;
 module.exports.SimpleBLEConnector = SimpleBLEConnector;
+module.exports.getNOBLE = function() {
+	return noble;
+};
+module.exports.getLogger = function() {
+	return logger;
+};
