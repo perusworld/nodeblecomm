@@ -161,21 +161,29 @@ BLEListner.prototype.onDeviceConnected = function () {
 };
 
 BLEListner.prototype.sendRaw = function (buffer) {
-	this.log('To send ' + buffer.toString());
-	if (this.writeCharacteristic && this.writeCharacteristic.updateValueCallback) {
-		this.log('Sent ' + buffer.toString());
-		this.writeCharacteristic.updateValueCallback(buffer);
+	if (this.conf.connected) {
+		this.log('To send ' + buffer.toString());
+		if (this.writeCharacteristic && this.writeCharacteristic.updateValueCallback) {
+			this.log('Sent ' + buffer.toString());
+			this.writeCharacteristic.updateValueCallback(buffer);
+		}
+	} else {
+		this.log('BLE Not Connected, not sending');
 	}
 };
 
 BLEListner.prototype.send = function (buffer) {
-	if (buffer.length > this.conf.maxLength) {
-		for (var index = 0; index < buffer.length; index = index + this.conf.maxLength) {
-			this.log('Going to send part from ' + index + ' to ' + Math.min(index + this.conf.maxLength, buffer.length));
-			this.sendRaw(buffer.slice(index, Math.min(index + this.conf.maxLength, buffer.length)));
+	if (this.conf.connected) {
+		if (buffer.length > this.conf.maxLength) {
+			for (var index = 0; index < buffer.length; index = index + this.conf.maxLength) {
+				this.log('Going to send part from ' + index + ' to ' + Math.min(index + this.conf.maxLength, buffer.length));
+				this.sendRaw(buffer.slice(index, Math.min(index + this.conf.maxLength, buffer.length)));
+			}
+		} else {
+			this.sendRaw(buffer);
 		}
 	} else {
-		this.sendRaw(buffer);
+		this.log('BLE Not Connected, not sending');
 	}
 };
 
@@ -275,17 +283,21 @@ ProtocolBLEListner.prototype.onData = function (data) {
 };
 
 ProtocolBLEListner.prototype.send = function (data) {
-	if (data.length > this.conf.maxLength) {
-		var toIndex = 0;
-		var dataMarker = this.conf.protocol.CHUNKED;
-		for (var index = 0; index < data.length; index = index + this.conf.maxLength) {
-			toIndex = Math.min(index + this.conf.maxLength, data.length);
-			this.log('Going to send part from ' + index + ' to ' + toIndex);
-			dataMarker = (index == 0) ? this.conf.protocol.CHUNKED_START : (toIndex == data.length ? this.conf.protocol.CHUNKED_END : this.conf.protocol.CHUNKED);
-			this.sendRaw(Buffer.concat([dataMarker, data.slice(index, toIndex), this.conf.protocol.EOM]));
+	if (this.conf.connected) {
+		if (data.length > this.conf.maxLength) {
+			var toIndex = 0;
+			var dataMarker = this.conf.protocol.CHUNKED;
+			for (var index = 0; index < data.length; index = index + this.conf.maxLength) {
+				toIndex = Math.min(index + this.conf.maxLength, data.length);
+				this.log('Going to send part from ' + index + ' to ' + toIndex);
+				dataMarker = (index == 0) ? this.conf.protocol.CHUNKED_START : (toIndex == data.length ? this.conf.protocol.CHUNKED_END : this.conf.protocol.CHUNKED);
+				this.sendRaw(Buffer.concat([dataMarker, data.slice(index, toIndex), this.conf.protocol.EOM]));
+			}
+		} else {
+			this.sendRaw(Buffer.concat([this.conf.protocol.DATA, data, this.conf.protocol.EOM]));
 		}
 	} else {
-		this.sendRaw(Buffer.concat([this.conf.protocol.DATA, data, this.conf.protocol.EOM]));
+		this.log('BLE Not Connected, not sending');
 	}
 };
 
@@ -293,9 +305,9 @@ module.exports.BLECommContext = BLECommContext;
 module.exports.BLEListner = BLEListner;
 module.exports.SimpleBLEListner = SimpleBLEListner;
 module.exports.ProtocolBLEListner = ProtocolBLEListner;
-module.exports.getBLENO = function() {
+module.exports.getBLENO = function () {
 	return bleno;
 };
-module.exports.getLogger = function() {
+module.exports.getLogger = function () {
 	return logger;
 };
