@@ -145,6 +145,9 @@ BLEListner.prototype.onDataFromMobile = function (data, offset, withoutResponse,
 BLEListner.prototype.onSubscribe = function (maxValueSize, updateValueCallback) {
 	this.log('Got subscribe call with maxValueSize ' + maxValueSize);
 	this.writeCharacteristic.maxValueSize = maxValueSize;
+	if (this.conf.maxLength > maxValueSize) {
+		this.conf.maxLength = maxValueSize;
+	}
 	this.writeCharacteristic.updateValueCallback = updateValueCallback;
 	this.onDeviceConnected();
 };
@@ -284,11 +287,12 @@ ProtocolBLEListner.prototype.onData = function (data) {
 
 ProtocolBLEListner.prototype.send = function (data) {
 	if (this.conf.connected) {
-		if (data.length > this.conf.maxLength) {
+		var len = this.conf.maxLength - 3;
+		if (data.length > len) {
 			var toIndex = 0;
 			var dataMarker = this.conf.protocol.CHUNKED;
-			for (var index = 0; index < data.length; index = index + this.conf.maxLength) {
-				toIndex = Math.min(index + this.conf.maxLength, data.length);
+			for (var index = 0; index < data.length; index = index + len) {
+				toIndex = Math.min(index + len, data.length);
 				this.log('Going to send part from ' + index + ' to ' + toIndex);
 				dataMarker = (index == 0) ? this.conf.protocol.CHUNKED_START : (toIndex == data.length ? this.conf.protocol.CHUNKED_END : this.conf.protocol.CHUNKED);
 				this.sendRaw(Buffer.concat([dataMarker, data.slice(index, toIndex), this.conf.protocol.EOM]));

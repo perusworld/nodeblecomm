@@ -1,6 +1,6 @@
 {
   "name": "nodeblecomm",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "Node.js BLE Communication Helper Library",
   "main": "nodeblecomm.js",
   "scripts": {
