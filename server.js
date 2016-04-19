@@ -20,6 +20,63 @@ BLECommContext.init = function (lgr, adptr) {
 	this.adapter = adptr;
 };
 
+function DelayedSender(sender) {
+	this.sender = sender;
+	this.buf = [];
+	this.maxLength = null;
+	this.sleepTime = null;
+	this.index = 0;
+	this.loc = 0;
+	this.timerId = null;
+}
+
+DelayedSender.prototype.doSend = function (buffer, index, loc) {
+	this.sender.sendRaw(buffer.slice(index, loc));
+}
+
+DelayedSender.prototype.delayedSend = function () {
+	var buffer = this.buf[0];
+	this.loc = Math.min(this.index + this.maxLength, buffer.length);
+	this.sender.log('Going to send part from ' + this.index + ' to ' + this.loc);
+	this.doSend(buffer, this.index, this.loc);
+	if (this.loc == buffer.length) {
+		this.buf.shift();
+		this.index = 0;
+		this.loc = 0;
+		if (0 < this.buf.length) {
+			this.timerId = setTimeout(this.delayedSend.bind(this), this.sleepTime);
+		} else {
+			this.timerId = null;
+		}
+	} else {
+		this.index = this.loc;
+		this.timerId = setTimeout(this.delayedSend.bind(this), this.sleepTime);
+	}
+}
+
+DelayedSender.prototype.send = function (buffer, maxLength, sleepTime) {
+	this.buf.push(buffer);
+	if (null == this.timerId) {
+		this.maxLength = maxLength;
+		this.sleepTime = sleepTime;
+		this.index = 0;
+		this.loc = 0;
+		this.delayedSend();
+	}
+}
+
+function ProtocolDelayedSender(sender) {
+	ProtocolDelayedSender.super_.call(this, sender);
+};
+
+util.inherits(ProtocolDelayedSender, DelayedSender);
+
+ProtocolDelayedSender.prototype.doSend = function (buffer, index, loc) {
+	this.sender.sendRaw(buffer.slice(index, loc));
+	var dataMarker = (index == 0) ? this.sender.conf.protocol.CHUNKED_START : (loc == buffer.length ? this.sender.conf.protocol.CHUNKED_END : this.sender.conf.protocol.CHUNKED);
+	this.sender.sendRaw(Buffer.concat([dataMarker, buffer.slice(index, loc), this.sender.conf.protocol.EOM]));
+}
+
 function BLEListner(config) {
 	this.conf = merge(
 		{
@@ -145,9 +202,7 @@ BLEListner.prototype.onDataFromMobile = function (data, offset, withoutResponse,
 BLEListner.prototype.onSubscribe = function (maxValueSize, updateValueCallback) {
 	this.log('Got subscribe call with maxValueSize ' + maxValueSize);
 	this.writeCharacteristic.maxValueSize = maxValueSize;
-	if (this.conf.maxLength > maxValueSize) {
-		this.conf.maxLength = maxValueSize;
-	}
+	this.conf.maxLength = maxValueSize;
 	this.writeCharacteristic.updateValueCallback = updateValueCallback;
 	this.onDeviceConnected();
 };
@@ -178,10 +233,7 @@ BLEListner.prototype.sendRaw = function (buffer) {
 BLEListner.prototype.send = function (buffer) {
 	if (this.conf.connected) {
 		if (buffer.length > this.conf.maxLength) {
-			for (var index = 0; index < buffer.length; index = index + this.conf.maxLength) {
-				this.log('Going to send part from ' + index + ' to ' + Math.min(index + this.conf.maxLength, buffer.length));
-				this.sendRaw(buffer.slice(index, Math.min(index + this.conf.maxLength, buffer.length)));
-			}
+			new DelayedSender(this).send(buffer, this.conf.maxLength, this.conf.sendDelay);
 		} else {
 			this.sendRaw(buffer);
 		}
@@ -289,14 +341,7 @@ ProtocolBLEListner.prototype.send = function (data) {
 	if (this.conf.connected) {
 		var len = this.conf.maxLength - 3;
 		if (data.length > len) {
-			var toIndex = 0;
-			var dataMarker = this.conf.protocol.CHUNKED;
-			for (var index = 0; index < data.length; index = index + len) {
-				toIndex = Math.min(index + len, data.length);
-				this.log('Going to send part from ' + index + ' to ' + toIndex);
-				dataMarker = (index == 0) ? this.conf.protocol.CHUNKED_START : (toIndex == data.length ? this.conf.protocol.CHUNKED_END : this.conf.protocol.CHUNKED);
-				this.sendRaw(Buffer.concat([dataMarker, data.slice(index, toIndex), this.conf.protocol.EOM]));
-			}
+			new ProtocolDelayedSender(this).send(data, len, this.conf.sendDelay);
 		} else {
 			this.sendRaw(Buffer.concat([this.conf.protocol.DATA, data, this.conf.protocol.EOM]));
 		}

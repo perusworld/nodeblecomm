@@ -27,7 +27,8 @@ module.exports = {
 			iUID: process.env.IUID || '180a',
 			fUID: process.env.fUID || 'fff3',
 			maxLength: process.env.MAX_LENGTH || 100,
-			desc: process.env.DESC || 'BLEComm'
+			desc: process.env.DESC || 'BLEComm',
+			sendDelay: process.env.SEND_DELAY || 50
 		},
 		protocol: {
 			protocol: {
