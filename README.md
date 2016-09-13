@@ -1,4 +1,9 @@
 # nodeblecomm
+
+[![bitHound Overall Score](https://www.bithound.io/github/perusworld/nodeblecomm/badges/score.svg)](https://www.bithound.io/github/perusworld/nodeblecomm)
+[![bitHound Dependencies](https://www.bithound.io/github/perusworld/nodeblecomm/badges/dependencies.svg)](https://www.bithound.io/github/perusworld/nodeblecomm/master/dependencies/npm)
+[![bitHound Code](https://www.bithound.io/github/perusworld/nodeblecomm/badges/code.svg)](https://www.bithound.io/github/perusworld/nodeblecomm)
+
 Node.js BLE Communication Helper Library
 
 ## Usage

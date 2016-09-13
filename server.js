@@ -13,7 +13,7 @@ var Characteristic = bleno.Characteristic;
 var BlenoDescriptor = bleno.Descriptor;
 
 function BLECommContext() {
-};
+}
 
 BLECommContext.init = function (lgr, adptr) {
 	this.logger = lgr;
@@ -32,7 +32,7 @@ function DelayedSender(sender) {
 
 DelayedSender.prototype.doSend = function (buffer, index, loc) {
 	this.sender.sendRaw(buffer.slice(index, loc));
-}
+};
 
 DelayedSender.prototype.delayedSend = function () {
 	var buffer = this.buf[0];
@@ -52,18 +52,18 @@ DelayedSender.prototype.delayedSend = function () {
 		this.index = this.loc;
 		this.timerId = setTimeout(this.delayedSend.bind(this), this.sleepTime);
 	}
-}
+};
 
 DelayedSender.prototype.send = function (buffer, maxLength, sleepTime) {
 	this.buf.push(buffer);
-	if (null == this.timerId) {
+	if (null === this.timerId) {
 		this.maxLength = maxLength;
 		this.sleepTime = sleepTime;
 		this.index = 0;
 		this.loc = 0;
 		this.delayedSend();
 	}
-}
+};
 
 function ProtocolDelayedSender(sender) {
 	ProtocolDelayedSender.super_.call(this, sender);
@@ -73,16 +73,16 @@ util.inherits(ProtocolDelayedSender, DelayedSender);
 
 ProtocolDelayedSender.prototype.doSend = function (buffer, index, loc) {
 	this.sender.sendRaw(buffer.slice(index, loc));
-	var dataMarker = (index == 0) ? this.sender.conf.protocol.CHUNKED_START : (loc == buffer.length ? this.sender.conf.protocol.CHUNKED_END : this.sender.conf.protocol.CHUNKED);
+	var dataMarker = (index === 0) ? this.sender.conf.protocol.CHUNKED_START : (loc == buffer.length ? this.sender.conf.protocol.CHUNKED_END : this.sender.conf.protocol.CHUNKED);
 	this.sender.sendRaw(Buffer.concat([dataMarker, buffer.slice(index, loc), this.sender.conf.protocol.EOM]));
-}
+};
 
 function BLEListner(config) {
 	this.conf = merge(
 		{
 			connected: false
 		}, appConfig.server.default, config);
-	this.conf.staticData = new Buffer(this.conf.desc)
+	this.conf.staticData = new Buffer(this.conf.desc);
 
 	this.readCharacteristic = null;
 	this.writeCharacteristic = null;
@@ -95,7 +95,7 @@ function BLEListner(config) {
 };
 
 BLEListner.prototype.log = function (msg) {
-	if (null != BLECommContext.logger) {
+	if (null !== BLECommContext.logger) {
 		BLECommContext.logger.log(msg);
 	}
 };
@@ -134,7 +134,7 @@ BLEListner.prototype.init = function () {
 BLEListner.prototype.onBleStateChange = function (state) {
 	this.log('on -> stateChange: ' + state);
 	if (state === 'poweredOn') {
-		if (null != this.onReady) {
+		if (null !== this.onReady) {
 			this.onReady();
 		}
 	} else {
@@ -158,7 +158,7 @@ BLEListner.prototype.onBleAdvertisingStart = function (error) {
 	} else {
 		this.log('success');
 		bleno.setServices([this.bleCommService, this.infoService], function (serviceError) {
-			this.log('Starting services: ')
+			this.log('Starting services: ');
 			if (serviceError) {
 				this.log('error ' + serviceError);
 			} else {
@@ -182,7 +182,7 @@ BLEListner.prototype.onBleDisconnect = function (clientaddress) {
 	if (clientaddress) {
 		this.log('from clientaddress ' + clientaddress);
 	}
-	if (null != this.onDisconnected) {
+	if (null !== this.onDisconnected) {
 		this.onDisconnected();
 	}
 };
@@ -244,7 +244,7 @@ BLEListner.prototype.send = function (buffer) {
 
 function SimpleBLEListner(config) {
 	SimpleBLEListner.super_.call(this, config);
-};
+}
 
 util.inherits(SimpleBLEListner, BLEListner);
 
@@ -255,7 +255,7 @@ function ProtocolBLEListner(config) {
 		dataBuffer: null
 	});
 	protocol.mergeCommands(this.conf.protocol);
-};
+}
 
 util.inherits(ProtocolBLEListner, BLEListner);
 
@@ -325,14 +325,14 @@ ProtocolBLEListner.prototype.pingIn = function () {
 ProtocolBLEListner.prototype.pingOut = function () {
 	this.log('got ping out');
 	this.conf.protocol.inSync = true;
-	if (null != this.onConnected) {
+	if (null !== this.onConnected) {
 		this.onConnected();
 	}
 };
 
 ProtocolBLEListner.prototype.onData = function (data) {
 	this.log('got on data ' + data);
-	if (null != this.onDataCallBack) {
+	if (null !== this.onDataCallBack) {
 		this.onDataCallBack(data);
 	}
 };
@@ -357,6 +357,7 @@ module.exports.ProtocolBLEListner = ProtocolBLEListner;
 module.exports.getBLENO = function () {
 	return bleno;
 };
+
 module.exports.getLogger = function () {
 	return logger;
 };
