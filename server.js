@@ -92,7 +92,7 @@ function BLEListner(config) {
 	this.onConnected = null;
 	this.onDisconnected = null;
 	this.onReady = null;
-};
+}
 
 BLEListner.prototype.log = function (msg) {
 	if (null !== BLECommContext.logger) {
@@ -106,7 +106,6 @@ BLEListner.prototype.init = function () {
 	this.writeCharacteristic = new Characteristic({
 		uuid: this.conf.tUID,
 		properties: ['notify'],
-		value: this.conf.staticData,
 		onSubscribe: this.onSubscribe.bind(this),
 		descriptors: [
 			new BlenoDescriptor({
@@ -118,7 +117,6 @@ BLEListner.prototype.init = function () {
 	this.readCharacteristic = new Characteristic({
 		uuid: this.conf.rUID,
 		properties: ['writeWithoutResponse'],
-		value: this.conf.staticData,
 		onWriteRequest: this.onDataFromMobile.bind(this)
 	});
 	this.bleCommService = new PrimaryService({
@@ -213,7 +211,7 @@ BLEListner.prototype.disconnect = function () {
 };
 
 BLEListner.prototype.onDeviceConnected = function () {
-	if (null != this.onConnected) {
+	if (null !== this.onConnected) {
 		this.onConnected();
 	}
 };
@@ -274,6 +272,37 @@ ProtocolBLEListner.prototype.doPing = function () {
 	}
 };
 
+ProtocolBLEListner.prototype.handleCommand = function (data) {
+	switch (data[0]) {
+		case this.conf.protocol.COMMAND.PING_IN:
+			this.pingIn();
+			break;
+		case this.conf.protocol.COMMAND.PING_OUT:
+			this.pingOut();
+			break;
+		case this.conf.protocol.COMMAND.DATA:
+			this.onData(data.slice(1, data.length - 2));
+			break;
+		case this.conf.protocol.COMMAND.CHUNKED_DATA_START:
+			this.log('Got chunk start');
+			this.conf.protocol.dataBuffer = data.slice(1, data.length - 2);
+			break;
+		case this.conf.protocol.COMMAND.CHUNKED_DATA:
+			this.log('Got chunk');
+			this.conf.protocol.dataBuffer = Buffer.concat([this.conf.protocol.dataBuffer, data.slice(1, data.length - 2)]);
+			break;
+		case this.conf.protocol.COMMAND.CHUNKED_DATA_END:
+			this.log('Got chunk end');
+			this.conf.protocol.dataBuffer = Buffer.concat([this.conf.protocol.dataBuffer, data.slice(1, data.length - 2)]);
+			this.onData(this.conf.protocol.dataBuffer);
+			this.conf.protocol.dataBuffer = null;
+			break;
+		default:
+			this.log('unknown ' + data[0].toString(16));
+			break;
+	}
+};
+
 ProtocolBLEListner.prototype.onDataFromMobile = function (data, offset, withoutResponse, callback) {
 	if (offset) {
 		callback(this.RESULT_ATTR_NOT_LONG);
@@ -281,34 +310,7 @@ ProtocolBLEListner.prototype.onDataFromMobile = function (data, offset, withoutR
 		this.log('Got ' + data.toString() + " of length " + data.length);
 		if (this.conf.protocol.COMMAND.EOM_FIRST == data[data.length - 2] &&
 			this.conf.protocol.COMMAND.EOM_SECOND == data[data.length - 1]) {
-			switch (data[0]) {
-				case this.conf.protocol.COMMAND.PING_IN:
-					this.pingIn();
-					break;
-				case this.conf.protocol.COMMAND.PING_OUT:
-					this.pingOut();
-					break;
-				case this.conf.protocol.COMMAND.DATA:
-					this.onData(data.slice(1, data.length - 2));
-					break;
-				case this.conf.protocol.COMMAND.CHUNKED_DATA_START:
-					this.log('Got chunk start');
-					this.conf.protocol.dataBuffer = data.slice(1, data.length - 2);
-					break;
-				case this.conf.protocol.COMMAND.CHUNKED_DATA:
-					this.log('Got chunk');
-					this.conf.protocol.dataBuffer = Buffer.concat([this.conf.protocol.dataBuffer, data.slice(1, data.length - 2)]);
-					break;
-				case this.conf.protocol.COMMAND.CHUNKED_DATA_END:
-					this.log('Got chunk end');
-					this.conf.protocol.dataBuffer = Buffer.concat([this.conf.protocol.dataBuffer, data.slice(1, data.length - 2)]);
-					this.onData(this.conf.protocol.dataBuffer);
-					this.conf.protocol.dataBuffer = null;
-					break;
-				default:
-					this.log('unknown ' + data[0].toString(16));
-					break;
-			}
+			this.handleCommand(data);
 		} else {
 			this.log('invalid protocol markers');
 		}
